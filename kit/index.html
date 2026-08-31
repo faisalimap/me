@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Kit — a Git CLI wrapper for working with a second GitHub identity on the same machine.">
+<meta name="theme-color" content="#d9ff3f">
+<title>Kit | Dual GitHub identities, one working tree.</title>
+<link rel="icon" type="image/png" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ee;--ink:#121212;--muted:#6d6d66;--line:#d8d5cd;--accent:#d9ff3f;--deep:#171c00}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:Inter,Arial,sans-serif;overflow-x:hidden}
+::selection{background:var(--ink);color:var(--accent)}
+a{color:inherit;text-decoration:none}
+button{font:inherit}
+.progress{position:fixed;z-index:50;top:0;left:0;width:0;height:3px;background:var(--accent)}
+.cursor-glow{position:fixed;z-index:0;width:260px;height:260px;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);background:radial-gradient(circle,color-mix(in srgb,var(--accent) 17%,transparent),transparent 66%)}
+header{height:78px;position:fixed;z-index:20;top:0;left:0;width:100%;padding:0 5vw;display:flex;align-items:center;background:rgba(245,243,238,.78);backdrop-filter:blur(12px);border-bottom:1px solid rgba(216,213,205,.55)}
+.logo{font:700 25px/1 "Space Grotesk";letter-spacing:-2px;margin-right:auto}
+.logo span{color:var(--accent)}
+nav{display:flex;gap:27px;font-size:13px;font-weight:600}
+nav a{padding:8px 0;position:relative}
+nav a:after{content:"";position:absolute;bottom:0;left:0;width:0;height:2px;background:var(--ink);transition:.25s}
+nav a:hover:after,nav a.active:after{width:100%}
+.header-right{display:flex;align-items:center;gap:17px;margin-left:28px}
+.social-top{display:flex;gap:8px}
+.icon-btn{width:30px;height:30px;border:1px solid transparent;border-radius:50%;display:grid;place-items:center;transition:.2s}
+.icon-btn:hover{background:var(--ink);color:#fff}
+.icon-btn svg{width:14px;height:14px;fill:currentColor}
+.colors{display:flex;gap:7px}
+.color{width:17px;height:17px;border-radius:50%;border:2px solid var(--bg);outline:1px solid #aaa;cursor:pointer;padding:0;transition:.2s}
+.color:hover{transform:scale(1.18)}
+.color.active{outline:2px solid var(--ink);transform:scale(1.12)}
+.green{background:#d9ff3f}.purple{background:#a87cff}.red{background:#ff6b6b}.blue{background:#168cff}
+.menu{display:none;border:0;background:none;cursor:pointer}
+.menu i{display:block;width:25px;height:2px;background:var(--ink);margin:5px}
+.mobile-panel{display:none}
+
+main{position:relative;z-index:1}
+.section{position:relative;padding:130px 9vw}
+.hero{min-height:100vh;padding-top:150px;display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:5vw}
+.eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:22px}
+.hero h1,.heading h2{font:700 clamp(54px,7vw,100px)/.9 "Space Grotesk";letter-spacing:-5px}
+.hero h1 span,.heading h2 span{color:#898983}
+.hero-text{max-width:620px;color:var(--muted);font-size:17px;line-height:1.7;margin:30px 0 34px}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--ink);padding:15px 20px;font-size:13px;font-weight:700;transition:.25s}
+.btn.primary{background:var(--ink);color:#fff}
+.btn b{margin-left:20px}
+.btn:hover{transform:translateY(-3px);box-shadow:5px 5px 0 var(--ink)}
+.repo-btn{height:48px;padding:0 16px;border:1px solid var(--line);display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;transition:.25s}
+.repo-btn svg{width:17px;height:17px;fill:currentColor}
+.repo-btn:hover{background:#fff;border-color:var(--ink);transform:translateY(-3px)}
+
+.hero-art{width:min(430px,82vw);aspect-ratio:1;justify-self:center;position:relative}
+.orbit{position:absolute;inset:0;border:1px solid #bbb;border-radius:50%}
+.o1{transform:rotate(31deg) scale(.93,.7)}
+.o2{transform:rotate(-26deg) scale(.82,1.04)}
+.terminal{position:absolute;z-index:2;inset:13% 6%;background:#111;color:#f2f2ee;border:1px solid #222;box-shadow:16px 16px 0 var(--accent);transform:rotate(3deg)}
+.terminal-bar{height:34px;border-bottom:1px solid #2d2d2d;display:flex;align-items:center;gap:7px;padding:0 12px}
+.terminal-dot{width:8px;height:8px;border-radius:50%;background:#444}
+.terminal-body{padding:24px 24px;font:12px/2.0 "JetBrains Mono",Consolas,monospace}
+.terminal-body .muted{color:#777}.terminal-body .accent{color:var(--accent)}.terminal-body .soft{color:#b8b8b2}
+.float{position:absolute;z-index:4;background:var(--deep);color:#fff;padding:13px 17px;display:flex;flex-direction:column;box-shadow:8px 8px 0 var(--accent)}
+.float strong{font:700 20px "Space Grotesk"}.float small{font-size:9px;color:#aaa;margin-top:3px}
+.float.top{top:10%;right:-2%}.float.bottom{bottom:8%;left:-5%}
+
+.intro-rule{border-top:1px solid var(--line);padding-top:24px;display:flex;justify-content:space-between;gap:30px;font-size:12px;color:var(--muted)}
+.intro-rule strong{font-family:"Space Grotesk";font-size:15px;color:var(--ink)}
+.heading{margin-bottom:65px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+.card{background:var(--bg);padding:38px;min-height:255px;transition:.25s}
+.card:hover{background:#efede7}
+.card .n{font:600 12px "Space Grotesk";color:#999}
+.card h3{font:600 29px/1 "Space Grotesk";margin:52px 0 12px}
+.card p{font-size:13px;line-height:1.75;color:var(--muted)}
+
+.code-section{background:var(--ink);color:#fff}
+.code-section .eyebrow{color:#888}.code-section .heading h2 span{color:#999}
+.code-layout{display:grid;grid-template-columns:.85fr 1.15fr;gap:8vw;align-items:start}
+.code-copy p{font-size:16px;line-height:1.8;color:#aaa;max-width:500px}
+.code-copy .tip{margin-top:32px;border-left:2px solid var(--accent);padding-left:18px;color:#ddd;font-size:12px;line-height:1.8}
+.codebox{background:#0d0d0d;border:1px solid #282828;padding:22px 24px;font:12px/2.05 "JetBrains Mono",Consolas,monospace;overflow:auto}
+.codebox .comment{color:#666}.codebox .cmd{color:#d9ff3f}.codebox .arg{color:#fff}.codebox .path{color:#9d9d98}
+.flow{margin-top:80px;border-top:1px solid #2f2f2f;display:grid;grid-template-columns:repeat(3,1fr)}
+.flow-item{padding:28px 18px 0;border-right:1px solid #2f2f2f}
+.flow-item:last-child{border-right:0}
+.flow-item span{font:600 11px "Space Grotesk";color:#777}
+.flow-item h4{font:600 23px "Space Grotesk";margin:12px 0 8px}
+.flow-item p{font-size:12px;line-height:1.7;color:#999}
+
+.commands{border-top:1px solid var(--line)}
+.command-row{display:grid;grid-template-columns:70px 1fr 1fr;border-bottom:1px solid var(--line);padding:27px 0;gap:25px}
+.command-row .n{font:600 12px "Space Grotesk";color:#999}
+.command-row code{font:12px "JetBrains Mono",Consolas,monospace;background:#eeece6;padding:8px 10px;width:max-content;max-width:100%}
+.command-row p{font-size:13px;line-height:1.65;color:var(--muted)}
+.subhead{margin-top:75px;margin-bottom:25px}
+
+.cta{background:var(--accent);min-height:48vh;display:flex;align-items:center}
+.cta h2{font:700 clamp(44px,6vw,82px)/.95 "Space Grotesk";letter-spacing:-4px}
+.cta p{max-width:620px;font-size:16px;line-height:1.7;margin:25px 0 30px}
+.cta .actions .btn.primary{background:var(--ink);border-color:var(--ink)}
+
+footer{border-top:1px solid var(--line);padding:28px 9vw;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+footer strong{color:var(--ink)}
+
+.reveal{opacity:1;transform:none;transition:opacity .7s ease,transform .7s ease}
+.js-ready .reveal{opacity:0;transform:translateY(26px)}
+.js-ready .reveal.visible{opacity:1;transform:none}
+
+@media(max-width:900px){
+ header{padding:0 6vw;height:68px}.desktop-nav,.social-top,.colors{display:none}
+ .header-right{margin-left:auto}.menu{display:block}
+ .mobile-panel{position:absolute;display:none;top:68px;left:0;width:100%;padding:25px 7vw 30px;background:var(--bg);border-bottom:1px solid var(--line)}
+ .mobile-panel.open{display:block}.mobile-nav{display:flex;flex-direction:column;gap:15px}
+ .mobile-nav a{font:600 18px "Space Grotesk"}
+ .mobile-social{display:flex;gap:18px;margin-top:24px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;font-weight:600}
+ .mobile-colors{display:flex;align-items:center;gap:10px;margin-top:22px}
+ .mobile-colors span{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-right:5px}
+ .section{padding:95px 7vw}.hero{grid-template-columns:1fr;padding-top:115px;gap:45px;min-height:auto;padding-bottom:110px}
+ .hero-art{order:-1;width:280px}.hero-copy{order:2}.hero h1,.heading h2{letter-spacing:-3px}
+ .hero h1{font-size:clamp(48px,14vw,74px)}.hero-text{font-size:15px}.scroll{display:none}
+ .heading{margin-bottom:50px}.heading h2{font-size:clamp(45px,12vw,72px)}
+ .cards,.code-layout{grid-template-columns:1fr}.card{min-height:210px}.card h3{margin-top:35px}
+ .flow{grid-template-columns:1fr}.flow-item{border-right:0;border-bottom:1px solid #2f2f2f}.flow-item:last-child{border-bottom:0}
+ .command-row{grid-template-columns:38px 1fr;gap:12px}.command-row p{grid-column:2}.command-row code{max-width:100%;overflow:auto}
+ .float{display:none}.intro-rule{flex-direction:column}
+}
+@media(max-width:520px){
+ .section{padding:82px 6vw}.hero{padding-top:100px}.hero-art{width:min(250px,78vw)}
+ .actions{display:grid;grid-template-columns:1fr 1fr}.actions .primary{grid-column:1/-1}
+ .btn,.repo-btn{width:100%;justify-content:center}
+ .terminal-body{padding:18px;font-size:10px}.terminal{box-shadow:10px 10px 0 var(--accent)}
+ .card{padding:27px 22px}.codebox{padding:18px;font-size:10px}
+ .cta{min-height:52vh}.cta h2{font-size:clamp(40px,11vw,58px);letter-spacing:-2px}
+ footer{padding:25px 6vw;gap:8px;flex-direction:column}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{transition:none}.cursor-glow{display:none}}
+@media(pointer:coarse){.cursor-glow{display:none}}
+</style>
+</head>
+<body>
+<div class="progress"></div><div class="cursor-glow"></div>
+
+<header>
+  <a class="logo" href="#home">FM<span>.</span> / kit</a>
+  <nav class="desktop-nav">
+    <a class="active" href="#home">Home</a>
+    <a href="#why">Why Kit</a>
+    <a href="#how">How it works</a>
+    <a href="#commands">Commands</a>
+  </nav>
+  <div class="header-right">
+    <div class="social-top">
+      <a class="icon-btn" href="https://github.com/faisalimap/kit" target="_blank" aria-label="GitHub">
+        <svg viewBox="0 0 24 24"><path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.05c-3.34.73-4.04-1.61-4.04-1.61-.55-1.4-1.34-1.77-1.34-1.77-1.09-.75.08-.74.08-.74 1.2.09 1.84 1.23 1.84 1.23 1.07 1.83 2.8 1.3 3.49.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.76.84 1.23 1.91 1.23 3.22 0 4.62-2.81 5.64-5.49 5.94.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z"/></svg>
+      </a>
+    </div>
+    <div class="colors" aria-label="Choose accent color">
+      <button class="color green active" data-color="green" aria-label="Green"></button>
+      <button class="color purple" data-color="purple" aria-label="Purple"></button>
+      <button class="color red" data-color="red" aria-label="Red"></button>
+      <button class="color blue" data-color="blue" aria-label="Blue"></button>
+    </div>
+    <button class="menu" aria-label="Open menu" aria-expanded="false"><i></i><i></i></button>
+  </div>
+  <div class="mobile-panel">
+    <nav class="mobile-nav">
+      <a href="#home">Home</a><a href="#why">Why Kit</a><a href="#how">How it works</a><a href="#commands">Commands</a>
+    </nav>
+    <div class="mobile-social"><a href="https://github.com/faisalimap/kit" target="_blank">GitHub repository ↗</a><a href="https://faisalimap.is-a.dev" target="_blank">Portfolio ↗</a></div>
+    <div class="mobile-colors"><span>Color</span><button class="color green active" data-color="green" aria-label="Green"></button><button class="color purple" data-color="purple" aria-label="Purple"></button><button class="color red" data-color="red" aria-label="Red"></button><button class="color blue" data-color="blue" aria-label="Blue"></button></div>
+  </div>
+</header>
+
+<main>
+<section id="home" class="hero section">
+  <div class="hero-copy reveal">
+    <p class="eyebrow">Git wrapper / Windows</p>
+    <h1>Two identities.<br><span>One working tree.</span></h1>
+    <p class="hero-text">Kit is a lightweight CLI wrapper around Git for using a second GitHub identity without creating a second repository, switching installations, or changing how your project is structured.</p>
+    <div class="actions">
+      <a class="btn primary" href="#how">See how it works <b>↘</b></a>
+      <a class="repo-btn" href="https://github.com/faisalimap/kit" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.05c-3.34.73-4.04-1.61-4.04-1.61-.55-1.4-1.34-1.77-1.34-1.77-1.09-.75.08-.74.08-.74 1.2.09 1.84 1.23 1.84 1.23 1.07 1.83 2.8 1.3 3.49.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.76.84 1.23 1.91 1.23 3.22 0 4.62-2.81 5.64-5.49 5.94.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+  <div class="hero-art reveal delay">
+    <div class="orbit o1"></div><div class="orbit o2"></div>
+    <div class="terminal">
+      <div class="terminal-bar"><i class="terminal-dot"></i><i class="terminal-dot"></i><i class="terminal-dot"></i></div>
+      <div class="terminal-body">
+        <div><span class="muted">C:\project&gt;</span> <span class="accent">git</span> push</div>
+        <div class="soft">→ GitHub / account-1</div>
+        <br>
+        <div><span class="muted">C:\project&gt;</span> <span class="accent">kit</span> push</div>
+        <div class="soft">→ GitHub / account-2</div>
+        <br>
+        <div><span class="muted">same</span> .git  <span class="accent">✓</span></div>
+      </div>
+    </div>
+    <div class="float top"><strong>git.exe</strong><small>still does the work</small></div>
+    <div class="float bottom"><strong>kit</strong><small>alternate identity</small></div>
+  </div>
+</section>
+
+<section id="why" class="section">
+  <div class="intro-rule reveal"><strong>01 / Why Kit</strong><span>Same Git. Different route.</span></div>
+  <div class="heading reveal"><p class="eyebrow">The idea</p><h2>Keep Git familiar.<br><span>Make identity switchable.</span></h2></div>
+  <div class="cards">
+    <article class="card reveal"><span class="n">01</span><h3>Same repository</h3><p>Git and Kit operate on the same working directory and the same .git repository. Your commits, branches, staging area and history stay ordinary Git.</p></article>
+    <article class="card reveal"><span class="n">02</span><h3>Second config</h3><p>Kit maintains a parallel configuration for its second identity, then supplies that configuration when a Kit command needs it.</p></article>
+    <article class="card reveal"><span class="n">03</span><h3>Two destinations</h3><p>Normal Git can continue using one remote and identity while Kit uses the second setup, letting the same local history reach both accounts.</p></article>
+  </div>
+</section>
+
+<section id="how" class="section code-section">
+  <div class="heading reveal"><p class="eyebrow">02 / How it works</p><h2>Nothing replaces Git.<br><span>Kit sits beside it.</span></h2></div>
+  <div class="code-layout">
+    <div class="code-copy reveal">
+      <p>Kit is intentionally a wrapper, not a new version-control system. Commands are forwarded to Git, while Kit-specific configuration is supplied for the second identity.</p>
+      <p class="tip">The local project remains a normal Git repository. Remove Kit and the repository is still a Git repository.</p>
+    </div>
+    <div class="codebox reveal">
+      <div class="comment"># normal Git</div>
+      <div><span class="cmd">git</span> <span class="arg">push</span></div>
+      <br>
+      <div class="comment"># Kit, using its parallel config</div>
+      <div><span class="cmd">kit</span> <span class="arg">push</span></div>
+      <div><span class="soft">→ forwards to git.exe with Kit's configuration</span></div>
+      <br>
+      <div class="comment"># configuration remains per project</div>
+      <div><span class="path">project/.git/config</span> <span class="soft">Git</span></div>
+      <div><span class="path">Kit parallel config</span> <span class="soft">Kit</span></div>
+    </div>
+  </div>
+  <div class="flow reveal">
+    <div class="flow-item"><span>01</span><h4>Type a command</h4><p>Use familiar Git syntax with <strong>kit</strong> instead of <strong>git</strong>.</p></div>
+    <div class="flow-item"><span>02</span><h4>Kit selects context</h4><p>The wrapper loads its parallel configuration for the current project.</p></div>
+    <div class="flow-item"><span>03</span><h4>Git executes</h4><p>The actual Git executable performs the operation against the same repository.</p></div>
+  </div>
+</section>
+
+<section id="commands" class="section">
+  <div class="intro-rule reveal"><strong>03 / Commands</strong><span>Familiar syntax by design.</span></div>
+  <div class="heading reveal"><p class="eyebrow">Workflow</p><h2>Use Kit where<br><span>you need another identity.</span></h2></div>
+  <div class="commands">
+    <div class="command-row reveal"><span class="n">01</span><code>kit status</code><p>Inspect the same working tree Git sees.</p></div>
+    <div class="command-row reveal"><span class="n">02</span><code>kit add .</code><p>Stage changes in the same Git index.</p></div>
+    <div class="command-row reveal"><span class="n">03</span><code>kit commit -m "update"</code><p>Create a normal Git commit using Kit's configured identity.</p></div>
+    <div class="command-row reveal"><span class="n">04</span><code>kit push</code><p>Push through Kit's configured account and remote.</p></div>
+    <div class="command-row reveal"><span class="n">05</span><code>git push</code><p>Continue using ordinary Git for the other account.</p></div>
+  </div>
+  <p class="eyebrow subhead reveal">A typical repository</p>
+  <div class="codebox reveal" style="background:#101010;color:#ddd;border-color:#262626">
+    <div><span style="color:#777">project/</span></div>
+    <div>├── <span style="color:#d9ff3f">.git/</span></div>
+    <div>│   └── config</div>
+    <div>├── src/</div>
+    <div>├── README.md</div>
+    <div>└── ...</div>
+  </div>
+</section>
+
+<section class="section cta">
+  <div class="reveal">
+    <p class="eyebrow">Built by Faisal Muzaffar</p>
+    <h2>Less account switching.<br>More shipping.</h2>
+    <p>Kit is a small developer tool built around a simple idea: keep the Git workflow you already know and make a second identity available when you need it.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/faisalimap/kit" target="_blank">View on GitHub <b>↗</b></a>
+      <a class="repo-btn" style="border-color:var(--ink)" href="https://faisalimap.is-a.dev" target="_blank">Back to portfolio</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><strong>Kit</strong><span>© <span id="year"></span> Faisal Muzaffar</span></footer>
+
+<script>
+const root=document.documentElement;
+const progress=document.querySelector('.progress');
+const menu=document.querySelector('.menu');
+const panel=document.querySelector('.mobile-panel');
+const themes={
+  green:{accent:'#d9ff3f',deep:'#171c00'},
+  purple:{accent:'#a87cff',deep:'#211535'},
+  red:{accent:'#ff6b6b',deep:'#260f12'},
+  blue:{accent:'#168cff',deep:'#071a2b'}
+};
+function setTheme(name,save=true){
+  const t=themes[name]||themes.green;
+  root.style.setProperty('--accent',t.accent);
+  root.style.setProperty('--deep',t.deep);
+  document.querySelectorAll('.color').forEach(b=>b.classList.toggle('active',b.dataset.color===name));
+  if(save)localStorage.setItem('kit-theme',name);
+}
+setTheme(localStorage.getItem('kit-theme')||'green',false);
+document.querySelectorAll('.color').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.color)));
+if(menu){
+  menu.addEventListener('click',()=>{
+    const open=panel.classList.toggle('open');
+    menu.setAttribute('aria-expanded',String(open));
+  });
+}
+document.querySelectorAll('.mobile-nav a').forEach(a=>a.addEventListener('click',()=>{
+  panel.classList.remove('open');
+  menu?.setAttribute('aria-expanded','false');
+}));
+function updateProgress(){
+  const max=document.documentElement.scrollHeight-window.innerHeight;
+  progress.style.width=max>0?`${(window.scrollY/max)*100}%`:'0%';
+}
+window.addEventListener('scroll',updateProgress,{passive:true});
+updateProgress();
+document.documentElement.classList.add('js-ready');
+const reveal=new IntersectionObserver(entries=>entries.forEach(e=>{
+  if(e.isIntersecting){e.target.classList.add('visible');reveal.unobserve(e.target);}
+}),{threshold:.04,rootMargin:'0px 0px -5% 0px'});
+document.querySelectorAll('.reveal').forEach(e=>{
+  if(e.getBoundingClientRect().top<window.innerHeight*1.05)e.classList.add('visible');
+  reveal.observe(e);
+});
+const sections=[...document.querySelectorAll('main section[id]')];
+function updateActive(){
+  let current='home',best=Infinity;
+  const marker=window.scrollY+window.innerHeight*.25;
+  sections.forEach(s=>{
+    const d=Math.abs(s.offsetTop-marker);
+    if(d<best){best=d;current=s.id;}
+  });
+  document.querySelectorAll('.desktop-nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+current));
+}
+window.addEventListener('scroll',updateActive,{passive:true});
+window.addEventListener('resize',updateActive);
+updateActive();
+const glow=document.querySelector('.cursor-glow');
+window.addEventListener('pointermove',e=>{
+  if(glow){glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px';}
+},{passive:true});
+document.getElementById('year').textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
