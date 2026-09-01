@@ -22,9 +22,9 @@ Includes projects from my **CupX ecosystem**, developer experiments, and other w
 
 ### 🔗 Connect
 
-**GitHub:** [@erfaisal](https://github.com/erfaisal)  
+**GitHub:** [@erfaisal](https://github.com/erfaisal) & [@faisalimap](https://github.com/faisalimap)
 **LinkedIn:** [faisalimap](https://www.linkedin.com/in/faisalimap/)
 
 ---
 
-Made by **Faisal Muzaffar**.
+Made and operated by **Faisal Muzaffar**.
